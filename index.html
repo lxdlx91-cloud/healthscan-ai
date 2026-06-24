@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Scan AI</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+body { background: #f2f2f7; min-height: 100vh; }
+.header { background: #000; color: white; padding: 20px; text-align: center; }
+.header h1 { font-size: 24px; font-weight: 700; }
+.header p { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 4px; }
+.container { max-width: 480px; margin: 0 auto; padding: 20px; }
+.card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.scan-btn { width: 100%; background: #007AFF; color: white; border: none; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 600; cursor: pointer; }
+textarea { width: 100%; border: 1px solid #e0e0e0; border-radius: 12px; padding: 14px; font-size: 15px; min-height: 120px; resize: none; outline: none; margin-bottom: 12px; }
+.result { background: #f8f8f8; border-radius: 12px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; display: none; }
+.loading { text-align: center; color: #007AFF; padding: 20px; display: none; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔬 Health Scan AI</h1>
+  <p>Paste ingredients to analyze</p>
+</div>
+<div class="container">
+  <div class="card">
+    <textarea id="ingredients" placeholder="Paste product ingredients here...&#10;&#10;Example: Carbonated Water, Caramel Color, Phosphoric Acid, Natural Flavors, Caffeine, Aspartame, Potassium Benzoate, Acesulfame Potassium"></textarea>
+    <button class="scan-btn" onclick="analyze()">🔍 Analyze Product</button>
+  </div>
+  <div class="loading" id="loading">⏳ AI is analyzing...</div>
+  <div class="card result" id="result"></div>
+</div>
+<script>
+async function analyze() {
+  const text = document.getElementById('ingredients').value.trim();
+  if (!text) { alert('Please enter ingredients first'); return; }
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `Analyze these product ingredients and give: 1) Health Score 1-100, 2) Rating (Excellent/Good/Average/Poor/Avoid), 3) Key concerns, 4) Allergens, 5) Is it safe for children/diabetics/pregnancy. Be concise.\n\nIngredients: ${text}` }]
+      })
+    });
+    const data = await res.json();
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').textContent = data.content[0].text;
+  } catch(e) {
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').textContent = 'Error: ' + e.message;
+  }
+  document.getElementById('loading').style.display = 'none';
+}
+</script>
+</body>
+</html>
