@@ -25,7 +25,7 @@ textarea { width: 100%; border: 1px solid #e0e0e0; border-radius: 12px; padding:
 </div>
 <div class="container">
   <div class="card">
-    <textarea id="ingredients" placeholder="Paste product ingredients here...&#10;&#10;Example: Carbonated Water, Caramel Color, Phosphoric Acid, Natural Flavors, Caffeine, Aspartame, Potassium Benzoate, Acesulfame Potassium"></textarea>
+    <textarea id="ingredients" placeholder="Paste product ingredients here..."></textarea>
     <button class="scan-btn" onclick="analyze()">🔍 Analyze Product</button>
   </div>
   <div class="loading" id="loading">⏳ AI is analyzing...</div>
@@ -38,18 +38,14 @@ async function analyze() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('result').style.display = 'none';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: `Analyze these product ingredients and give: 1) Health Score 1-100, 2) Rating (Excellent/Good/Average/Poor/Avoid), 3) Key concerns, 4) Allergens, 5) Is it safe for children/diabetics/pregnancy. Be concise.\n\nIngredients: ${text}` }]
-      })
+      body: JSON.stringify({ ingredients: text })
     });
     const data = await res.json();
     document.getElementById('result').style.display = 'block';
-    document.getElementById('result').textContent = data.content[0].text;
+    document.getElementById('result').textContent = data.result;
   } catch(e) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('result').textContent = 'Error: ' + e.message;
