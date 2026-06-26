@@ -2,56 +2,595 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Health Scan AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NutriScan — AI Food Analyzer</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-body { background: #f2f2f7; min-height: 100vh; }
-.header { background: #000; color: white; padding: 20px; text-align: center; }
-.header h1 { font-size: 24px; font-weight: 700; }
-.header p { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 4px; }
-.container { max-width: 480px; margin: 0 auto; padding: 20px; }
-.card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-.scan-btn { width: 100%; background: #007AFF; color: white; border: none; border-radius: 14px; padding: 18px; font-size: 17px; font-weight: 600; cursor: pointer; }
-textarea { width: 100%; border: 1px solid #e0e0e0; border-radius: 12px; padding: 14px; font-size: 15px; min-height: 120px; resize: none; outline: none; margin-bottom: 12px; }
-.result { background: #f8f8f8; border-radius: 12px; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; display: none; }
-.loading { text-align: center; color: #007AFF; padding: 20px; display: none; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f2f2f7; min-height: 100vh; }
+.app { max-width: 430px; margin: 0 auto; background: #fff; min-height: 100vh; position: relative; }
+
+/* Header */
+.header { background: #1a1a2e; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.header-logo { width: 36px; height: 36px; background: #00b894; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.header-logo svg { width: 22px; height: 22px; fill: white; }
+.header-title { color: white; font-size: 20px; font-weight: 700; }
+.header-sub { color: rgba(255,255,255,0.5); font-size: 12px; }
+
+/* Screens */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Home Screen */
+.home-banner { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 28px 20px; text-align: center; }
+.home-banner h2 { color: white; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.home-banner p { color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.5; }
+
+.scan-card { margin: 20px 16px; background: #00b894; border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; box-shadow: 0 8px 24px rgba(0,184,148,0.3); transition: transform 0.1s; }
+.scan-card:active { transform: scale(0.98); }
+.scan-card-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.scan-card-icon svg { width: 30px; height: 30px; fill: white; }
+.scan-card-text { color: white; }
+.scan-card-text h3 { font-size: 18px; font-weight: 700; }
+.scan-card-text p { font-size: 13px; opacity: 0.8; margin-top: 2px; }
+
+.stats-row { display: flex; gap: 12px; padding: 0 16px 16px; }
+.stat-box { flex: 1; background: #f8f8f8; border-radius: 14px; padding: 14px; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+.stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+
+.section-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 16px 10px; }
+.section-head h3 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.section-head span { font-size: 13px; color: #00b894; cursor: pointer; }
+
+.history-item { margin: 0 16px 10px; background: #f8f8f8; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.history-icon { width: 44px; height: 44px; border-radius: 10px; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.history-info { flex: 1; }
+.history-name { font-size: 15px; font-weight: 600; color: #1a1a2e; }
+.history-cat { font-size: 12px; color: #888; margin-top: 2px; }
+.score-pill { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.score-good { background: #e8f5e9; color: #2e7d32; }
+.score-avg { background: #fff3e0; color: #e65100; }
+.score-poor { background: #ffebee; color: #c62828; }
+
+/* Scan Screen */
+.scan-screen { background: #000; }
+.camera-area { position: relative; background: #111; height: 400px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.camera-placeholder { text-align: center; color: rgba(255,255,255,0.5); }
+.camera-placeholder svg { width: 60px; height: 60px; fill: rgba(255,255,255,0.3); margin-bottom: 12px; }
+.camera-placeholder p { font-size: 14px; }
+
+.scan-frame { position: absolute; width: 220px; height: 220px; }
+.scan-frame::before, .scan-frame::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: #00b894; border-style: solid; }
+.scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.scan-frame::after { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.scan-frame-inner::before, .scan-frame-inner::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: #00b894; border-style: solid; }
+.scan-frame-inner::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.scan-frame-inner::after { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+.scan-frame-inner { position: absolute; inset: 0; }
+
+.scan-tip { position: absolute; top: 20px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.7); font-size: 13px; }
+
+.scan-actions { background: #000; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; }
+.scan-side-btn { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: white; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.scan-main-btn { width: 72px; height: 72px; border-radius: 50%; background: white; border: 4px solid rgba(255,255,255,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+.scan-main-btn:active { transform: scale(0.93); }
+.scan-main-inner { width: 60px; height: 60px; border-radius: 50%; background: white; border: 2px solid rgba(0,0,0,0.1); }
+
+/* Upload area */
+.upload-area { margin: 20px 16px; border: 2px dashed #00b894; border-radius: 16px; padding: 32px; text-align: center; cursor: pointer; background: #f0faf8; }
+.upload-area svg { width: 48px; height: 48px; fill: #00b894; margin-bottom: 12px; }
+.upload-area h3 { font-size: 16px; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; }
+.upload-area p { font-size: 13px; color: #888; }
+#file-input { display: none; }
+
+/* Preview */
+.img-preview { margin: 0 16px 16px; border-radius: 16px; overflow: hidden; position: relative; }
+.img-preview img { width: 100%; max-height: 300px; object-fit: cover; }
+.analyze-btn { margin: 0 16px 20px; width: calc(100% - 32px); background: #00b894; color: white; border: none; border-radius: 14px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s; }
+.analyze-btn:active { opacity: 0.85; }
+.analyze-btn svg { width: 22px; height: 22px; fill: white; }
+
+/* Loading */
+.loading-screen { padding: 60px 20px; text-align: center; }
+.spinner { width: 56px; height: 56px; border: 4px solid #e0e0e0; border-top-color: #00b894; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-screen h3 { font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 8px; }
+.loading-steps { list-style: none; text-align: left; margin: 20px auto; max-width: 240px; }
+.loading-steps li { font-size: 14px; color: #888; padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+.loading-steps li.done { color: #00b894; }
+.step-dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; flex-shrink: 0; }
+.loading-steps li.done .step-dot { background: #00b894; }
+.loading-steps li.active .step-dot { background: #00b894; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Result Screen */
+.result-header { background: #1a1a2e; padding: 16px 20px 24px; color: white; }
+.back-btn { background: none; border: none; color: #00b894; font-size: 15px; cursor: pointer; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+.product-row { display: flex; align-items: center; gap: 14px; }
+.product-icon { width: 60px; height: 60px; border-radius: 14px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+.product-name { font-size: 18px; font-weight: 700; }
+.product-cat { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+.product-badge { display: inline-block; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
+
+.score-section { background: #16213e; padding: 20px; display: flex; align-items: center; gap: 18px; }
+.score-ring { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+.score-ring svg { transform: rotate(-90deg); }
+.score-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-num { font-size: 24px; font-weight: 800; color: #00b894; }
+.score-max { font-size: 10px; color: rgba(255,255,255,0.4); }
+.score-info { color: white; flex: 1; }
+.score-rating { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.score-desc { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+
+.result-body { background: #f2f2f7; padding-bottom: 24px; }
+.result-card { background: white; margin: 12px 14px 0; border-radius: 16px; overflow: hidden; }
+.card-title { padding: 12px 16px 10px; font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 0.5px solid #f0f0f0; }
+
+.nutrient-row { display: flex; align-items: center; padding: 10px 16px; border-bottom: 0.5px solid #f5f5f5; }
+.nutrient-row:last-child { border-bottom: none; }
+.nutrient-emoji { font-size: 18px; margin-right: 12px; width: 24px; text-align: center; }
+.nutrient-name { flex: 1; font-size: 15px; color: #1a1a2e; font-weight: 500; }
+.nutrient-val { font-size: 14px; color: #888; margin-right: 10px; }
+.bar-wrap { width: 55px; }
+.bar-track { height: 5px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+
+.tag-row { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-block; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; }
+.tag-safe { background: #e8f5e9; color: #2e7d32; }
+.tag-caution { background: #fff3e0; color: #e65100; }
+.tag-avoid { background: #ffebee; color: #c62828; }
+
+.allergen-row { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.allergen-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.allergen-yes { background: #ffebee; color: #c62828; }
+.allergen-no { background: #e8f5e9; color: #2e7d32; }
+
+.rec-row { display: flex; align-items: center; padding: 11px 16px; border-bottom: 0.5px solid #f5f5f5; gap: 12px; }
+.rec-row:last-child { border-bottom: none; }
+.rec-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.rec-label { flex: 1; font-size: 14px; color: #1a1a2e; font-weight: 500; }
+.rec-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.rec-yes { background: #e8f5e9; color: #2e7d32; }
+.rec-no { background: #ffebee; color: #c62828; }
+.rec-maybe { background: #fff3e0; color: #e65100; }
+
+.ai-section { margin: 12px 14px 0; background: white; border-radius: 16px; padding: 16px; }
+.ai-section h4 { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 10px; }
+.ai-text { font-size: 14px; color: #555; line-height: 1.7; white-space: pre-wrap; }
+
+.chat-btn { margin: 12px 14px 0; background: #00b894; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.chat-btn-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.chat-btn-text { color: white; }
+.chat-btn-text strong { font-size: 15px; font-weight: 700; display: block; }
+.chat-btn-text span { font-size: 12px; opacity: 0.75; }
+
+/* Tab Bar */
+.tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; height: 76px; background: rgba(255,255,255,0.95); border-top: 0.5px solid #e0e0e0; display: flex; align-items: flex-start; padding-top: 8px; backdrop-filter: blur(10px); z-index: 100; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+.tab svg { width: 24px; height: 24px; }
+.tab span { font-size: 10px; font-weight: 500; }
+.tab.active svg { fill: #00b894; }
+.tab.active span { color: #00b894; }
+.tab:not(.active) svg { fill: #aaa; }
+.tab:not(.active) span { color: #aaa; }
+
+.pb { padding-bottom: 80px; }
+
+/* Alternatives */
+.alt-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 12px 16px; scrollbar-width: none; }
+.alt-scroll::-webkit-scrollbar { display: none; }
+.alt-card { flex-shrink: 0; width: 100px; background: #f8f8f8; border-radius: 12px; padding: 12px; text-align: center; }
+.alt-emoji { font-size: 28px; margin-bottom: 6px; }
+.alt-name { font-size: 11px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+.alt-score { display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+
+/* Error */
+.error-box { margin: 16px; background: #ffebee; border-radius: 14px; padding: 16px; text-align: center; }
+.error-box p { color: #c62828; font-size: 14px; line-height: 1.5; }
+.retry-btn { margin-top: 12px; background: #c62828; color: white; border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>🔬 Health Scan AI</h1>
-  <p>Paste ingredients to analyze</p>
-</div>
-<div class="container">
-  <div class="card">
-    <textarea id="ingredients" placeholder="Paste product ingredients here..."></textarea>
-    <button class="scan-btn" onclick="analyze()">🔍 Analyze Product</button>
+
+<div class="app">
+
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="screen-home">
+    <div class="home-banner">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:40px;height:40px;background:#00b894;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        </div>
+        <div>
+          <div style="color:white;font-size:20px;font-weight:700;">NutriScan</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;">AI Food Analyzer</div>
+        </div>
+      </div>
+      <h2>What's in your food?</h2>
+      <p>Upload a photo of any food label and get instant AI health analysis</p>
+    </div>
+
+    <div class="scan-card" onclick="showScreen('scan')">
+      <div class="scan-card-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z"/></svg>
+      </div>
+      <div class="scan-card-text">
+        <h3>Scan Food Label</h3>
+        <p>Upload photo or take picture</p>
+      </div>
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:rgba(255,255,255,0.5);margin-left:auto;flex-shrink:0;"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" style="color:#00b894;" id="total-scans">0</div>
+        <div class="stat-lbl">Total Scans</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#1a1a2e;" id="avg-score">—</div>
+        <div class="stat-lbl">Avg Score</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" style="color:#e65100;" id="flagged-count">0</div>
+        <div class="stat-lbl">Flagged</div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3>Recent Scans</h3>
+    </div>
+
+    <div id="history-list">
+      <div style="text-align:center;padding:32px 20px;color:#aaa;">
+        <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#ddd;margin-bottom:12px;"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg>
+        <p style="font-size:14px;">No scans yet — scan your first product!</p>
+      </div>
+    </div>
+
+    <div style="height:80px;"></div>
   </div>
-  <div class="loading" id="loading">⏳ AI is analyzing...</div>
-  <div class="card result" id="result"></div>
+
+  <!-- SCAN SCREEN -->
+  <div class="screen" id="screen-scan">
+    <div style="background:#1a1a2e;padding:14px 20px;display:flex;align-items:center;gap:12px;">
+      <button onclick="showScreen('home')" style="background:none;border:none;color:#00b894;font-size:15px;cursor:pointer;">← Back</button>
+      <span style="color:white;font-weight:600;font-size:16px;">Scan Food Label</span>
+    </div>
+
+    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+      <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z"/></svg>
+      <h3>Upload Food Photo</h3>
+      <p>Take a photo of ingredients label,<br>nutrition facts, or food packaging</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileUpload(event)">
+
+    <div id="img-preview-wrap" style="display:none;">
+      <div class="img-preview">
+        <img id="preview-img" src="" alt="Food label preview">
+      </div>
+      <button class="analyze-btn" onclick="analyzeImage()">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        Analyze with AI
+      </button>
+    </div>
+
+    <div style="padding:0 16px;">
+      <div style="background:#f0faf8;border-radius:14px;padding:14px;margin-bottom:16px;">
+        <p style="font-size:13px;color:#555;line-height:1.6;"><strong style="color:#00b894;">Tips for best results:</strong><br>
+        • Make sure ingredients text is clear and readable<br>
+        • Include nutrition facts if visible<br>
+        • Good lighting helps accuracy</p>
+      </div>
+    </div>
+
+    <div style="height:80px;"></div>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div class="screen" id="screen-loading">
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <h3>Analyzing your food...</h3>
+      <p style="font-size:14px;color:#888;">Please wait while AI processes the image</p>
+      <ul class="loading-steps" id="loading-steps">
+        <li id="step-1"><span class="step-dot"></span>Detecting food product</li>
+        <li id="step-2"><span class="step-dot"></span>Reading ingredients</li>
+        <li id="step-3"><span class="step-dot"></span>Checking additives database</li>
+        <li id="step-4"><span class="step-dot"></span>Calculating health score</li>
+        <li id="step-5"><span class="step-dot"></span>Generating recommendations</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="screen pb" id="screen-result">
+    <div class="result-header">
+      <button class="back-btn" onclick="showScreen('home')">← Back to Home</button>
+      <div class="product-row">
+        <div class="product-icon" id="result-emoji">🍎</div>
+        <div>
+          <div class="product-name" id="result-name">Product</div>
+          <div class="product-cat" id="result-brand">Brand</div>
+          <span class="product-badge" id="result-category">Food</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-ring">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" stroke="rgba(255,255,255,0.1)" stroke-width="7" fill="none"/>
+          <circle cx="45" cy="45" r="38" stroke="#00b894" stroke-width="7" fill="none"
+            stroke-dasharray="238.8" id="score-arc" stroke-dashoffset="119" stroke-linecap="round"/>
+        </svg>
+        <div class="score-center">
+          <div class="score-num" id="score-num">—</div>
+          <div class="score-max">/100</div>
+        </div>
+      </div>
+      <div class="score-info">
+        <div class="score-rating" id="score-rating">Analyzing...</div>
+        <div class="score-desc" id="score-desc">AI health analysis will appear here.</div>
+      </div>
+    </div>
+
+    <div class="result-body">
+
+      <div class="result-card" id="nutrition-card">
+        <div class="card-title">Nutrition Facts</div>
+        <div id="nutrition-content"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-title">Key Ingredients</div>
+        <div class="tag-row" id="ingredients-tags"></div>
+        <div style="padding:4px 16px 12px;display:flex;gap:10px;font-size:11px;color:#888;">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#2e7d32;margin-right:4px;"></span>Safe</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#e65100;margin-right:4px;"></span>Caution</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#c62828;margin-right:4px;"></span>Avoid</span>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-title">Allergens</div>
+        <div class="allergen-row" id="allergens-content"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-title">AI Recommendations</div>
+        <div id="recommendations-content"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-title">Healthier Alternatives</div>
+        <div class="alt-scroll" id="alternatives-content"></div>
+      </div>
+
+      <div class="ai-section">
+        <h4>Full AI Analysis</h4>
+        <div class="ai-text" id="ai-full-text"></div>
+      </div>
+
+      <div style="height:16px;"></div>
+    </div>
+  </div>
+
+  <!-- ERROR SCREEN -->
+  <div class="screen" id="screen-error">
+    <div style="background:#1a1a2e;padding:14px 20px;display:flex;align-items:center;gap:12px;">
+      <button onclick="showScreen('scan')" style="background:none;border:none;color:#00b894;font-size:15px;cursor:pointer;">← Back</button>
+      <span style="color:white;font-weight:600;font-size:16px;">Analysis Failed</span>
+    </div>
+    <div class="error-box">
+      <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#c62828;margin-bottom:12px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <p id="error-msg">Something went wrong. Please try again.</p>
+      <button class="retry-btn" onclick="showScreen('scan')">Try Again</button>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <div class="tab active" id="tab-home" onclick="showTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="tab" id="tab-scan" onclick="showTab('scan')">
+      <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+      <span>Scan</span>
+    </div>
+    <div class="tab" id="tab-history" onclick="showTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      <span>History</span>
+    </div>
+  </div>
+
 </div>
+
 <script>
-async function analyze() {
-  const text = document.getElementById('ingredients').value.trim();
-  if (!text) { alert('Please enter ingredients first'); return; }
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('result').style.display = 'none';
+let scanHistory = JSON.parse(localStorage.getItem('nutriscan_history') || '[]');
+let currentImageBase64 = null;
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  showScreen(name);
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const dataUrl = ev.target.result;
+    document.getElementById('preview-img').src = dataUrl;
+    document.getElementById('img-preview-wrap').style.display = 'block';
+    currentImageBase64 = dataUrl.split(',')[1];
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analyzeImage() {
+  if (!currentImageBase64) return;
+  showScreen('loading');
+  animateLoadingSteps();
+
   try {
-    const res = await fetch('/api/analyze', {
+    const response = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ingredients: text })
+      body: JSON.stringify({ imageBase64: currentImageBase64 })
     });
-    const data = await res.json();
-    document.getElementById('result').style.display = 'block';
-    document.getElementById('result').textContent = data.result;
-  } catch(e) {
-    document.getElementById('result').style.display = 'block';
-    document.getElementById('result').textContent = 'Error: ' + e.message;
+
+    const data = await response.json();
+
+    if (data.error) {
+      document.getElementById('error-msg').textContent = data.error;
+      showScreen('error');
+      return;
+    }
+
+    displayResult(data);
+    saveToHistory(data);
+    showScreen('result');
+
+  } catch (err) {
+    document.getElementById('error-msg').textContent = 'Connection failed. Please check your internet and try again.';
+    showScreen('error');
   }
-  document.getElementById('loading').style.display = 'none';
 }
+
+function animateLoadingSteps() {
+  const steps = ['step-1','step-2','step-3','step-4','step-5'];
+  let i = 0;
+  steps.forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.remove('done','active');
+    el.querySelector('.step-dot').style.background = '#ddd';
+  });
+  const iv = setInterval(() => {
+    if (i > 0) {
+      const prev = document.getElementById(steps[i-1]);
+      prev.classList.remove('active');
+      prev.classList.add('done');
+      prev.querySelector('.step-dot').style.background = '#00b894';
+    }
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('active');
+      document.getElementById(steps[i]).querySelector('.step-dot').style.background = '#00b894';
+      i++;
+    } else {
+      clearInterval(iv);
+    }
+  }, 800);
+}
+
+function displayResult(data) {
+  document.getElementById('result-emoji').textContent = data.emoji || '🍎';
+  document.getElementById('result-name').textContent = data.productName || 'Food Product';
+  document.getElementById('result-brand').textContent = data.brand || 'Unknown Brand';
+  document.getElementById('result-category').textContent = data.category || 'Food';
+
+  const score = data.healthScore || 50;
+  document.getElementById('score-num').textContent = score;
+  const offset = 238.8 - (238.8 * score / 100);
+  document.getElementById('score-arc').setAttribute('stroke-dashoffset', offset);
+
+  const ratingEl = document.getElementById('score-rating');
+  ratingEl.textContent = data.rating || 'Average';
+  const colors = { 'Excellent': '#00b894', 'Good': '#00b894', 'Average': '#e65100', 'Poor': '#c62828', 'Avoid': '#c62828' };
+  ratingEl.style.color = colors[data.rating] || '#e65100';
+
+  document.getElementById('score-desc').textContent = data.summary || '';
+  document.getElementById('ai-full-text').textContent = data.fullAnalysis || '';
+
+  const nutHtml = (data.nutrition || []).map(n => `
+    <div class="nutrient-row">
+      <span class="nutrient-emoji">${n.emoji}</span>
+      <span class="nutrient-name">${n.name}</span>
+      <span class="nutrient-val">${n.value}</span>
+      <div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${n.pct}%;background:${n.color};"></div></div></div>
+    </div>`).join('');
+  document.getElementById('nutrition-content').innerHTML = nutHtml;
+
+  const tagsHtml = (data.ingredients || []).map(ing =>
+    `<span class="tag tag-${ing.level}">${ing.name}</span>`).join('');
+  document.getElementById('ingredients-tags').innerHTML = tagsHtml;
+
+  const allerHtml = (data.allergens || []).map(a =>
+    `<span class="allergen-pill ${a.present ? 'allergen-yes' : 'allergen-no'}">${a.present ? '⚠' : '✓'} ${a.name}</span>`).join('');
+  document.getElementById('allergens-content').innerHTML = allerHtml;
+
+  const recHtml = (data.recommendations || []).map(r => `
+    <div class="rec-row">
+      <div class="rec-icon" style="background:${r.bg}">${r.emoji}</div>
+      <span class="rec-label">${r.label}</span>
+      <span class="rec-badge ${r.verdict === 'Yes' ? 'rec-yes' : r.verdict === 'No' ? 'rec-no' : 'rec-maybe'}">${r.verdict}</span>
+    </div>`).join('');
+  document.getElementById('recommendations-content').innerHTML = recHtml;
+
+  const altHtml = (data.alternatives || []).map(a => `
+    <div class="alt-card">
+      <div class="alt-emoji">${a.emoji}</div>
+      <div class="alt-name">${a.name}</div>
+      <span class="alt-score">${a.score}</span>
+    </div>`).join('');
+  document.getElementById('alternatives-content').innerHTML = altHtml;
+}
+
+function saveToHistory(data) {
+  scanHistory.unshift({
+    id: Date.now(),
+    name: data.productName,
+    category: data.category,
+    emoji: data.emoji,
+    score: data.healthScore,
+    rating: data.rating,
+    time: new Date().toLocaleDateString()
+  });
+  if (scanHistory.length > 20) scanHistory = scanHistory.slice(0, 20);
+  localStorage.setItem('nutriscan_history', JSON.stringify(scanHistory));
+  updateStats();
+  renderHistory();
+}
+
+function updateStats() {
+  document.getElementById('total-scans').textContent = scanHistory.length;
+  if (scanHistory.length > 0) {
+    const avg = Math.round(scanHistory.reduce((s,i) => s + i.score, 0) / scanHistory.length);
+    document.getElementById('avg-score').textContent = avg;
+    const flagged = scanHistory.filter(i => i.score < 40).length;
+    document.getElementById('flagged-count').textContent = flagged;
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (scanHistory.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:32px 20px;color:#aaa;"><p style="font-size:14px;">No scans yet — scan your first product!</p></div>`;
+    return;
+  }
+  list.innerHTML = scanHistory.slice(0, 5).map(item => {
+    const cls = item.score >= 70 ? 'score-good' : item.score >= 50 ? 'score-avg' : 'score-poor';
+    return `<div class="history-item">
+      <div class="history-icon">${item.emoji || '🍎'}</div>
+      <div class="history-info">
+        <div class="history-name">${item.name}</div>
+        <div class="history-cat">${item.category} · ${item.time}</div>
+      </div>
+      <div class="score-pill ${cls}">${item.score}</div>
+    </div>`;
+  }).join('');
+}
+
+updateStats();
+renderHistory();
 </script>
 </body>
 </html>
