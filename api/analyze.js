@@ -8,17 +8,31 @@ export default async function handler(req, res) {
   const { imageBase64 } = req.body;
   if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
-  const prompt = `You are a food health analyst. Analyze this food product image and return ONLY a JSON object (no markdown, no explanation).
-
-Return this exact JSON structure:
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                inline_data: {
+                  mime_type: 'image/jpeg',
+                  data: imageBase64
+                }
+              },
+              {
+                text: `Analyze this food product image. Return ONLY a JSON object with no markdown:
 {
-  "productName": "Product name",
-  "brand": "Brand name or Unknown",
-  "category": "Food/Beverage/Snack/etc",
-  "emoji": "relevant emoji",
+  "productName": "name",
+  "brand": "brand or Unknown",
+  "category": "Food/Beverage/Snack",
+  "emoji": "🍎",
   "healthScore": 75,
   "rating": "Good",
-  "summary": "2 sentence summary here.",
+  "summary": "2 sentence summary.",
   "nutrition": [
     {"emoji":"🔥","name":"Calories","value":"250 kcal","pct":60,"color":"#ff9800"},
     {"emoji":"🍬","name":"Sugar","value":"12g","pct":40,"color":"#f44336"},
@@ -51,43 +65,21 @@ Return this exact JSON structure:
     {"emoji":"🍎","name":"Fresh Fruit","score":"92"},
     {"emoji":"🫧","name":"Water","score":"100"}
   ],
-  "fullAnalysis": "Detailed 3-4 sentence health analysis of this product."
-}`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: imageBase64
+  "fullAnalysis": "Detailed 3-4 sentence health analysis."
+}`
               }
-            },
-            { type: 'text', text: prompt }
-          ]
-        }]
-      })
-    });
+            ]
+          }]
+        })
+      }
+    );
 
     const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    const text = data.content[0].text;
+    const text = data.candidates[0].content.parts[0].text;
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     return res.status(200).json(parsed);
+
   } catch (err) {
     return res.status(500).json({ error: 'Analysis failed. Please try again.' });
   }
